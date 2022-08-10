@@ -1,0 +1,79 @@
+CS Independence -->
+
+xtcd unemployment
+xtcdf unemployment
+xtcsd, pesaran abs
+xtcsd, frees
+
+First gen-unit root test -->
+
+xtunitroot llc ln_lab_pro, trend lags(aic 10) demean
+xtunitroot ips ln_lab_pro, trend lags(aic 8) demean
+xtunitroot fisher ln_lab_pro, dfuller drift demean lags(2)
+xtunitroot hadri ln_lab_pro, kernel (bartlet 5) demean
+xtunitroot ht ln_lab_prod, trend demean
+xtunitroot breitung ln_lab_prod, robust
+
+Second gen-unit root test -->
+
+pescadf ln_lab_prod, lags(1)
+multipurt ln_lab_prod
+
+Auto-correlation and Heteroskedasticity -->
+
+xtgls ln_output_per_worker ln_wage_workers , igls panels(heteroskedastic)
+estimates store heteros
+local df = e(N_g) - 1
+xtgls ln_output_per_worker ln_wage_workers , igls
+local df = e(N_g) - 1
+lrtest heteros . , df(`df')
+
+xtserial ln_output_per_worker ln_wage_workers
+
+
+Static Panel -->
+
+reg ln_output_per_worker ln_wage_workers
+estimate store pool
+
+egen m_y = mean( ln_output_per_worker ), by ( id )
+egen m_x = mean( ln_wage_workers ), by ( id )
+gen w_m_y = ln_output_per_worker - m_y
+gen w_m_x = ln_wage_workers - m_x
+reg w_m_y w_m_x
+estimate store we
+
+xtreg ln_output_per_worker ln_wage_workers , fe
+estimate store fe
+
+xtreg ln_output_per_worker ln_wage_workers , be
+estimate store be
+
+xtreg ln_output_per_worker ln_wage_workers , re
+estimate store re
+
+xtreg ln_output_per_worker ln_wage_workers i.id
+estimate store lsdv
+
+estimates table pool we fe re be lsdv, star stats(N)
+
+Static Panel Testing -->
+
+testparm i.id (pooled vs fixed)
+xttest0 (pooled vs random)
+hausman re (fixed vs random)
+
+Dynamic Panel -->
+
+xtivreg ln_lab ln_lab_pro gdp_growth ( l.ln_lab =l2.ln_lab) , fe
+xtivreg ln_lab ln_lab_pro gdp_growth ( l.ln_lab =l2.ln_lab) , fd
+xtivreg ln_lab ln_lab_pro gdp_growth ( l.ln_lab =l2.ln_lab) , re
+
+xtabond ln_lab l(0/1).ln_lab_pro l(0/1).gdp_growth, lags(1) noconstant
+xtabond ln_lab l(0/1).ln_lab_pro l(0/1).gdp_growth, lags(1) vce(robust)
+xtabond ln_lab l(0/1).ln_lab_pro l(0/1).gdp_growth, lags(1) twostep vce(robust) noconstant
+
+estat sargan
+estat abond
+
+xtdpdsys ln_lab l(0/1).ln_lab_pro l(0/1).gdp_growth, lags(1) vce(robust)
